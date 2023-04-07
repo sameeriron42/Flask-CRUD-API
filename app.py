@@ -2,7 +2,12 @@ from flask import Flask,Response,request
 import json
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
+mongo = MongoClient(app.config['MONGODB_URI'])
+db = mongo.test
+user_resource = db[app.config['COLLECTION_NAME']]
 
 @app.route('/')
 def home():
@@ -73,8 +78,3 @@ def delete(id):
 
 
 
-if __name__ == '__main__':
-    mongo = MongoClient('localhost',27017)
-    db = mongo.test
-    user_resource = db['user_resource']
-    app.run(debug=True,port=5002,host='0.0.0.0')
