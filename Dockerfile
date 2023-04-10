@@ -4,4 +4,5 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 COPY . .
 EXPOSE 5002
+WORKDIR /app/app
 CMD ["flask","run"]

@@ -1,20 +1,21 @@
-from flask import Flask,Response,request
+from flask import Blueprint,Response,request
 import json
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-app = Flask(__name__)
-app.config.from_pyfile('config.py')
-mongo = MongoClient(app.config['MONGODB_URI'])
+mongo = MongoClient('mongodb://host.docker.internal:27017')
 db = mongo.test
-user_resource = db[app.config['COLLECTION_NAME']]
+user_resource = db['user_resource']
 
-@app.route('/')
+
+user = Blueprint('user',__name__)
+
+@user.route('/')
 def home():
     return Response(response=json.dumps({"status":"up"}),status=200,mimetype='application/json')
 
-@app.route('/users', methods=['GET'])
 #returns names of all users in database
+@user.route('/users', methods=['GET'])
 def get_all_users():
     output= user_resource.find({},{"name":1})
     list_of_users = []
@@ -22,8 +23,8 @@ def get_all_users():
         list_of_users.append(doc["name"])
     return Response(response=json.dumps(list_of_users),status=200,mimetype='application/json')
 
-@app.get('/users/<id>')
 #returns document associated with <id>
+@user.get('/users/<id>')
 def get_user(id):
     try:
         result = user_resource.find_one({"_id": ObjectId(id)})
@@ -35,8 +36,8 @@ def get_user(id):
         json_result = {"name": result['name'],"email":result['email'],"password":result['password']}
         return Response(response=json.dumps(json_result),status=200,mimetype='application/json')
 
-@app.route('/users', methods=['POST'])
 #create new document
+@user.route('/users', methods=['POST'])
 def create_user():
     data = request.json
     #skipping data validation as DB schema is missing
@@ -50,7 +51,7 @@ def create_user():
 
     return Response(response = json.dumps(output),status=201,mimetype='application/json')
 
-@app.put('/users/<id>')
+@user.put('/users/<id>')
 def update(id):
     data = request.json
     user_resource.update_one
@@ -69,7 +70,7 @@ def update(id):
 
     return Response(response=json.dumps(json_result),status=201,mimetype='application/json')
     
-@app.delete('/users/<id>')
+@user.delete('/users/<id>')
 def delete(id):
     try:
         delete_result = user_resource.delete_one({"_id":ObjectId(id)})
@@ -79,6 +80,4 @@ def delete(id):
         return Response(response='Nothing to DELETE, no record found with this ID',status=404)
 
     return Response(response='Deleted document with id: '+id,status=200)
-
-
 
